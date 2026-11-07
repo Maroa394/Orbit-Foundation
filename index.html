@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ORBIT | Organisational Intelligence</title>
+<style>
+:root{--navy:#101b35;--blue:#536dfe;--bg:#f4f6fb;--ink:#18233c;--muted:#6c7890;--line:#e4e9f2}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{background:var(--navy);color:white;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{font-weight:800;letter-spacing:2px;font-size:22px}.brand small{display:block;font-size:10px;letter-spacing:1px;color:#b9c5e3;font-weight:500}
+main{max-width:1100px;margin:auto;padding:22px}.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 3px 14px #1b2b4a08}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}.metric{font-size:28px;font-weight:800}.muted{color:var(--muted);font-size:13px}
+nav{display:flex;gap:8px;flex-wrap:wrap;padding:14px 22px;background:white;border-bottom:1px solid var(--line)}
+button{border:0;border-radius:9px;background:var(--blue);color:white;padding:10px 14px;font-weight:650;cursor:pointer}
+button.secondary{background:#edf1ff;color:#3148b9}button:disabled{opacity:.5}
+input,textarea,select{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;margin:5px 0 12px;font:inherit}
+label{font-size:13px;font-weight:650}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.item{padding:12px 0;border-bottom:1px solid var(--line)}.item:last-child{border:0}
+.hidden{display:none}.error{color:#b42318}.success{color:#16794b}
+@media(max-width:600px){main{padding:12px}.row{grid-template-columns:1fr}header{padding:14px}.panel{padding:14px}}
+</style></head><body>
+<header><div class="brand">ORBIT <small>ORGANISATIONAL RISK & BUSINESS INTELLIGENCE TECHNOLOGY</small></div><div id="who" class="muted" style="color:#d8e0f5">Secure workspace</div></header>
+<nav id="nav" class="hidden">
+<button class="secondary" onclick="show('overview')">Overview</button><button class="secondary" onclick="show('tasks')">FollowUp</button><button class="secondary" onclick="show('risks')">Risk</button><button class="secondary" onclick="show('watch')">Watch</button><button class="secondary" onclick="show('evidence')">Evidence</button><button class="secondary" onclick="show('approvals')">Control</button><button class="secondary" onclick="logout()">Sign out</button>
+</nav>
+<main>
+<section id="auth" class="panel"><h2>Welcome to ORBIT</h2><p class="muted">Create your organisation workspace or sign in to continue.</p>
+<div class="row"><div><h3>Create workspace</h3><label>Organisation</label><input id="org" placeholder="Organisation name"><label>Your name</label><input id="name" placeholder="Full name"><label>Email</label><input id="regemail" type="email" placeholder="you@company.com"><label>Password (10+ characters)</label><input id="regpass" type="password"><button onclick="register()">Create workspace</button></div>
+<div><h3>Sign in</h3><label>Email</label><input id="email" type="email"><label>Password</label><input id="pass" type="password"><button onclick="login()">Sign in</button></div></div><p id="authmsg" class="muted"></p></section>
+<section id="app" class="hidden">
+<div id="overview" class="view"><h2>Organisation overview</h2><p class="muted">Live counts from your organisation's records.</p><div class="grid" id="metrics"></div></div>
+<div id="tasks" class="view hidden"><h2>ORBIT FollowUp</h2><div class="panel"><label>Task title</label><input id="tasktitle" placeholder="e.g. Review supplier contract"><label>Description</label><textarea id="taskdesc"></textarea><div class="row"><div><label>Priority</label><select id="taskpriority"><option>low</option><option selected>medium</option><option>high</option><option>critical</option></select></div><div><label>Due date</label><input id="taskdate" type="date"></div></div><button onclick="addTask()">Add task</button></div><div class="panel" id="tasklist"></div></div>
+<div id="risks" class="view hidden"><h2>ORBIT Risk</h2><div class="panel"><label>Risk title</label><input id="risktitle"><label>Description</label><textarea id="riskdesc"></textarea><div class="row"><div><label>Likelihood (1–5)</label><input id="likelihood" type="number" min="1" max="5" value="3"></div><div><label>Impact (1–5)</label><input id="impact" type="number" min="1" max="5" value="3"></div></div><label>Mitigation</label><textarea id="mitigation"></textarea><button onclick="addRisk()">Record risk</button></div><div class="panel" id="risklist"></div></div>
+<div id="watch" class="view hidden"><h2>ORBIT Watch</h2><div class="panel"><label>Event / alert title</label><input id="watchtitle"><label>Details</label><textarea id="watchdetails"></textarea><div class="row"><div><label>Source</label><input id="watchsource" value="Manual"></div><div><label>Severity</label><select id="severity"><option>low</option><option selected>medium</option><option>high</option><option>critical</option></select></div></div><button onclick="addWatch()">Create event</button></div><div class="panel" id="watchlist"></div></div>
+<div id="evidence" class="view hidden"><h2>ORBIT Evidence</h2><p class="muted">This first release stores evidence metadata and references, not uploaded files.</p><div class="panel"><label>Evidence title</label><input id="evtitle"><label>Reference / secure file link</label><input id="evref"><label>Review date</label><input id="evdate" type="date"><button onclick="addEvidence()">Add evidence record</button></div><div class="panel" id="evlist"></div></div>
+<div id="approvals" class="view hidden"><h2>ORBIT Control</h2><div class="panel"><label>Approval request</label><input id="apptitle"><label>Details</label><textarea id="appdetails"></textarea><button onclick="addApproval()">Submit approval request</button></div><div class="panel" id="applist"></div></div>
+<p id="msg" class="muted"></p></section>
+</main>
+<script>
+let token=localStorage.getItem('orbit_token');
+const api=async(path,method='GET',body=null)=>{let r=await fetch('/api'+path,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});let d=await r.json().catch(()=>({detail:'Unexpected server response'}));if(!r.ok)throw Error(d.detail||'Request failed');return d};
+function note(s,el='msg',bad=false){let x=document.getElementById(el);x.textContent=s;x.className=bad?'error':'success'}
+async function register(){try{let d=await api('/auth/register','POST',{organisation_name:org.value,full_name:name.value,email:regemail.value,password:regpass.value});token=d.access_token;localStorage.setItem('orbit_token',token);await start()}catch(e){note(e.message,'authmsg',true)}}
+async function login(){try{let d=await api('/auth/login','POST',{email:email.value,password:pass.value});token=d.access_token;localStorage.setItem('orbit_token',token);await start()}catch(e){note(e.message,'authmsg',true)}}
+function logout(){localStorage.removeItem('orbit_token');token=null;location.reload()}
+async function start(){try{let u=await api('/me');auth.classList.add('hidden');app.classList.remove('hidden');nav.classList.remove('hidden');who.textContent=u.organisation+' · '+u.role;await refresh();show('overview')}catch(e){logout()}}
+function show(id){document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden')}
+async function refresh(){await Promise.all([dashboard(),tasks(),risks(),watch(),evidence(),approvals()])}
+async function dashboard(){let d=await api('/dashboard');metrics.innerHTML=Object.entries({'Open tasks':d.open_tasks,'Overdue':d.overdue_tasks,'Open risks':d.open_risks,'Critical risks':d.critical_risks,'New events':d.new_events,'Pending approvals':d.pending_approvals}).map(([k,v])=>`<div class="panel"><div class="muted">${k}</div><div class="metric">${v}</div></div>`).join('')}
+async function tasks(){let a=await api('/tasks');tasklist.innerHTML=a.map(x=>`<div class="item"><b>${esc(x.title)}</b><div class="muted">${x.priority} · ${x.status} · Due ${x.due_date||'not set'}</div>${x.description?'<p>'+esc(x.description)+'</p>':''}<button class="secondary" onclick="completeTask(${x.id})">Mark complete</button></div>`).join('')||'No tasks yet.'}
+async function addTask(){try{await api('/tasks','POST',{title:tasktitle.value,description:taskdesc.value,priority:taskpriority.value,due_date:taskdate.value||null});tasktitle.value='';taskdesc.value='';await refresh();note('Task added')}catch(e){note(e.message,'msg',true)}}
+async function completeTask(id){try{let a=await api('/tasks');let x=a.find(y=>y.id===id);await api('/tasks/'+id,'PATCH',{title:x.title,description:x.description,status:'completed',priority:x.priority,due_date:x.due_date,department_id:x.department_id});await refresh()}catch(e){note(e.message,'msg',true)}}
+async function risks(){let a=await api('/risks');risklist.innerHTML=a.map(x=>`<div class="item"><b>${esc(x.title)}</b><div class="muted">${x.category} · score ${x.score}/25 · ${x.status}</div>${esc(x.mitigation)}</div>`).join('')||'No risks recorded.'}
+async function addRisk(){try{await api('/risks','POST',{title:risktitle.value,description:riskdesc.value,likelihood:+likelihood.value,impact:+impact.value,mitigation:mitigation.value});risktitle.value='';await refresh();note('Risk recorded')}catch(e){note(e.message,'msg',true)}}
+async function watch(){let a=await api('/watch');watchlist.innerHTML=a.map(x=>`<div class="item"><b>${esc(x.title)}</b><div class="muted">${x.severity} · ${x.status} · ${esc(x.source)}</div>${esc(x.details)} ${x.status==='new'?`<p><button class="secondary" onclick="ack(${x.id})">Acknowledge</button></p>`:''}</div>`).join('')||'No events recorded.'}
+async function addWatch(){try{await api('/watch','POST',{title:watchtitle.value,details:watchdetails.value,source:watchsource.value,severity:severity.value});watchtitle.value='';await refresh();note('Event created')}catch(e){note(e.message,'msg',true)}}
+async function ack(id){try{await api('/watch/'+id+'/acknowledge','PATCH');await refresh()}catch(e){note(e.message,'msg',true)}}
+async function evidence(){let a=await api('/evidence');evlist.innerHTML=a.map(x=>`<div class="item"><b>${esc(x.title)}</b><div class="muted">${x.evidence_type} · review ${x.review_date||'not set'}</div>${esc(x.reference)}</div>`).join('')||'No evidence records.'}
+async function addEvidence(){try{await api('/evidence','POST',{title:evtitle.value,reference:evref.value,review_date:evdate.value||null});evtitle.value='';await refresh();note('Evidence record added')}catch(e){note(e.message,'msg',true)}}
+async function approvals(){let a=await api('/approvals');applist.innerHTML=a.map(x=>`<div class="item"><b>${esc(x.title)}</b><div class="muted">${x.status}</div>${esc(x.request_details)}${x.status==='pending'?`<p><button onclick="decision(${x.id},'approved')">Approve</button> <button class="secondary" onclick="decision(${x.id},'rejected')">Reject</button></p>`:''}</div>`).join('')||'No approval requests.'}
+async function addApproval(){try{await api('/approvals','POST',{title:apptitle.value,request_details:appdetails.value});apptitle.value='';await refresh();note('Approval request submitted')}catch(e){note(e.message,'msg',true)}}
+async function decision(id,d){try{await api('/approvals/'+id+'/decision','POST',{decision:d,decision_note:''});await refresh()}catch(e){note(e.message,'msg',true)}}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+if(token)start();
+</script></body></html>
