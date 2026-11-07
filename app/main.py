@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+app.config import setting
 from app.database import Base, engine, get_db
 from app.models import Organisation, User, Department, WorkItem, Risk, WatchEvent, EvidenceRecord, Approval, AuditLog
 from app.schemas import RegisterIn, LoginIn, DepartmentIn, WorkIn, RiskIn, WatchIn, EvidenceIn, ApprovalIn, DecisionIn
